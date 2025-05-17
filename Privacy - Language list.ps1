@@ -1,0 +1,168 @@
+# Script version: 2025-05-04 09:40
+
+# ---------------------------[ Script Start Timestamp ]---------------------------
+
+# Capture start time to log script duration
+$scriptStartTime = Get-Date
+
+# ---------------------------[ Registry Values ]---------------------------
+
+# Define registry path and value
+$registryKeys = @(
+    @{
+        Hive        = 'HKEY_CURRENT_USER'
+        KeyPath     = 'Control Panel\International\User Profile'
+        ValueName   = 'HttpAcceptLanguageOptOut'
+        ValueData   = 1
+        ValueType   = 'DWord'
+    }
+)
+
+# ValueType
+# REG_SZ        =   String
+# REG_EXPAND_SZ =   ExpandString
+# REG_DWORD     =   DWord
+# REG_QWORD     =   QWord
+# REG_MULTI_SZ  =   MultiString
+# REG_BINARY    =   Binary
+
+# ---------------------------[ Logging Setup ]---------------------------
+
+# Logging control switches
+$log = 1                         # 1 = Enable logging, 0 = Disable logging
+$EnableLogFile = $true           # Set to $false to disable file output
+
+# Application name used for folder/log naming
+$scriptName = "Privacy - Language list"
+
+# Define the log output location
+$LogFileDirectory = "$env:ProgramData\IntuneLogs\Scripts"
+$LogFile = "$LogFileDirectory\$($scriptName).log"
+
+# Ensure the log directory exists
+if (-not (Test-Path $LogFileDirectory)) {
+    New-Item -ItemType Directory -Path $LogFileDirectory -Force | Out-Null
+}
+
+# Function to write structured logs to file and console
+function Write-Log {
+    param ([string]$Message, [string]$Tag = "Info")
+
+    if ($log -ne 1) { return } # Exit if logging is disabled
+
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $tagList = @("Start", "Check", "Info", "Success", "Error", "End")
+    $rawTag = $Tag.Trim()
+
+    if ($tagList -contains $rawTag) {
+        $rawTag = $rawTag.PadRight(7)
+    } else {
+        $rawTag = "Error  "  # Fallback if an unrecognized tag is used
+    }
+
+    # Set tag colors
+    $color = switch ($rawTag.Trim()) {
+        "Start"   { "Cyan" }
+        "Check"   { "Blue" }
+        "Info"    { "Yellow" }
+        "Success" { "Green" }
+        "Error"   { "Red" }
+        "End"     { "Cyan" }
+        default   { "White" }
+    }
+
+    $logMessage = "$timestamp [  $rawTag ] $Message"
+
+    # Write to file if enabled
+    if ($EnableLogFile) {
+        "$logMessage" | Out-File -FilePath $LogFile -Append
+    }
+
+    # Write to console with color formatting
+    Write-Host "$timestamp " -NoNewline
+    Write-Host "[  " -NoNewline -ForegroundColor White
+    Write-Host "$rawTag" -NoNewline -ForegroundColor $color
+    Write-Host " ] " -NoNewline -ForegroundColor White
+    Write-Host "$Message"
+}
+
+# ---------------------------[ Exit Function ]---------------------------
+
+function Complete-Script {
+    param([int]$ExitCode)
+    $scriptEndTime = Get-Date
+    $duration = $scriptEndTime - $scriptStartTime
+    Write-Log "Script execution time: $($duration.ToString("hh\:mm\:ss\.ff"))" -Tag "Info"
+    Write-Log "Exit Code: $ExitCode" -Tag "Info"
+    Write-Log "======== Platform Script Completed ========" -Tag "End"
+    exit $ExitCode
+}
+# Complete-Script -ExitCode 0
+
+# ---------------------------[ Registry Test Function ]---------------------------
+
+function Test-RegistryKeyValue {
+    param (
+        [string]$Hive,
+        [string]$KeyPath,
+        [string]$ValueName,
+        [Parameter(Mandatory = $true)]$ExpectedValue,
+        [switch]$EnableLogging
+    )
+
+    $fullPath = Join-Path $Hive $KeyPath
+    $registryPath = "Registry::$fullPath"
+
+    try {
+        $actualValue = Get-ItemProperty -Path $registryPath -Name $ValueName -ErrorAction Stop | Select-Object -ExpandProperty $ValueName
+        if ("$actualValue" -eq "$ExpectedValue") {
+            if ($EnableLogging) {
+                Write-Log "Verified: $Hive\$KeyPath\$ValueName = $ExpectedValue" -Tag "Success"
+            }
+            return $true
+        } else {
+            if ($EnableLogging) {
+                Write-Log "Mismatch: $Hive\$KeyPath\$ValueName is '$actualValue', expected '$ExpectedValue'" -Tag "Error"
+            }
+            return $false
+        }
+    }
+    catch {
+        if ($EnableLogging) {
+            Write-Log "Could not read $Hive\$KeyPath\$ValueName - $_" -Tag "Error"
+        }
+        return $false
+    }
+}
+
+# ---------------------------[ Script Start ]---------------------------
+
+Write-Log "======== Platform Script Started ========" -Tag "Start"
+Write-Log "ComputerName: $env:COMPUTERNAME | User: $env:USERNAME | Script: $scriptName" -Tag "Info"
+
+# ---------------------------[ Set Registry Values ]---------------------------
+
+foreach ($key in $registryKeys) {
+    $regPath = Join-Path $key.Hive $key.KeyPath
+    $fullPath = "Registry::$regPath"
+
+    try {
+        if (-not (Test-Path $fullPath)) {
+            Write-Log "Path: $fullPath does not exist. Creating..." -Tag "Info"
+            New-Item -Path $fullPath -Force | Out-Null
+        }        
+        Set-ItemProperty -Path $fullPath -Name $key.ValueName -Value $key.ValueData -Type $key.ValueType -Force
+        Write-Log "Set $($key.ValueName) to $($key.ValueData) in $regPath" -Tag "Info"
+    }
+    catch {
+        Write-Log "Failed to set $($key.ValueName) in $($regPath): $_" -Tag "Error"
+        continue
+    }
+
+    if (-not (Test-RegistryKeyValue -Hive $key.Hive -KeyPath $key.KeyPath -ValueName $key.ValueName -ExpectedValue $key.ValueData -EnableLogging)) {
+        Write-Log "Validation failed for $($key.ValueName) in $regPath" -Tag "Error"
+        Complete-Script -ExitCode 1
+    }
+}
+Write-Log "All registry values were set and validated successfully." -Tag "Success"
+Complete-Script -ExitCode 0
