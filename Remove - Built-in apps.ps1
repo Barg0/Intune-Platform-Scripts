@@ -1,36 +1,40 @@
-# Script version: 2025-05-03 19:05
+# Script version:   2025-05-29 11:42
+# Script author:    Barg0
 
 # ---------------------------[ Script Start Timestamp ]---------------------------
 
 # Capture start time to log script duration
 $scriptStartTime = Get-Date
 
+# ---------------------------[ Script name ]---------------------------
+
+# Script name used for folder/log naming
+$scriptName = "Remove - Built-in apps"
+$logFileName = "$scriptName.log"
+
 # ---------------------------[ Logging Setup ]---------------------------
 
 # Logging control switches
-$log = 1                         # 1 = Enable logging, 0 = Disable logging
-$EnableLogFile = $true           # Set to $false to disable file output
-
-# Application name used for folder/log naming
-$scriptName = "Remove - Built-in apps"
+$log = $true                     # Set to $false to disable logging in shell
+$enableLogFile = $true           # Set to $false to disable file output
 
 # Define the log output location
-$LogFileDirectory = "$env:ProgramData\IntuneLogs\Scripts"
-$LogFile = "$LogFileDirectory\$scriptName.log"
+$logFileDirectory = "$env:ProgramData\Microsoft\IntuneManagementExtension\Logs\Scripts"
+$logFile = "$logFileDirectory\$logFileName"
 
 # Ensure the log directory exists
-if (-not (Test-Path $LogFileDirectory)) {
-    New-Item -ItemType Directory -Path $LogFileDirectory -Force | Out-Null
+if ($enableLogFile -and -not (Test-Path $logFileDirectory)) {
+    New-Item -ItemType Directory -Path $logFileDirectory -Force | Out-Null
 }
 
 # Function to write structured logs to file and console
 function Write-Log {
     param ([string]$Message, [string]$Tag = "Info")
 
-    if ($log -ne 1) { return } # Exit if logging is disabled
+    if (-not $log) { return } # Exit if logging is disabled
 
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $tagList = @("Start", "Check", "Info", "Success", "Error", "End")
+    $tagList = @("Start", "Check", "Info", "Success", "Error", "Debug", "End")
     $rawTag = $Tag.Trim()
 
     if ($tagList -contains $rawTag) {
@@ -46,6 +50,7 @@ function Write-Log {
         "Info"    { "Yellow" }
         "Success" { "Green" }
         "Error"   { "Red" }
+        "Debug"   { "DarkYellow"}
         "End"     { "Cyan" }
         default   { "White" }
     }
@@ -53,8 +58,8 @@ function Write-Log {
     $logMessage = "$timestamp [  $rawTag ] $Message"
 
     # Write to file if enabled
-    if ($EnableLogFile) {
-        "$logMessage" | Out-File -FilePath $LogFile -Append
+    if ($enableLogFile) {
+        "$logMessage" | Out-File -FilePath $logFile -Append
     }
 
     # Write to console with color formatting
