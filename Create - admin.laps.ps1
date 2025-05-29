@@ -1,4 +1,4 @@
-# Script version:   2025-05-29 11:38
+# Script version:   2025-05-29 14:00
 # Script author:    Barg0
 
 # ---------------------------[ Script Start Timestamp ]---------------------------
@@ -9,7 +9,7 @@ $scriptStartTime = Get-Date
 
 # Script name used for folder/log naming
 $scriptName = "Create - admin.laps"
-$logFileName = "$scriptName.log"
+$logFileName = "$($scriptName)" + ".log"
 
 # ---------------------------[ User Variables ]---------------------------
 
@@ -24,7 +24,7 @@ $log = $true                     # Set to $false to disable logging in shell
 $enableLogFile = $true           # Set to $false to disable file output
 
 # Define the log output location
-$logFileDirectory = "$env:ProgramData\Microsoft\IntuneManagementExtension\Logs\Scripts"
+$logFileDirectory = "$env:ProgramData\IntuneLogs\Scripts"
 $logFile = "$logFileDirectory\$logFileName"
 
 # Ensure the log directory exists
