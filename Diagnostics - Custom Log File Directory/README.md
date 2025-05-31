@@ -25,7 +25,7 @@ $registryKeys = @(
 
 ---
 
-## 📦 Behavior
+## </> Behavior
 
 Collected logs will be included in the `.cab` file under the `FoldersFiles temp_MDMDiagnostics_mdmlogs` directory.
 
