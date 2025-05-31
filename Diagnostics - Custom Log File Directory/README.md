@@ -45,13 +45,12 @@ Collected logs will be included in the `.cab` file under the `FoldersFiles temp_
 
 ## ✅ Why Use a Custom Log Folder?
 
-By default, Intune scripts log to:
+The default folder used by the  `Intune Management Extension` is:
 
 ```
-C:\ProgramData\Microsoft\IntuneManagementExtension\Logs\Scripts
+C:\ProgramData\Microsoft\IntuneManagementExtension\Logs
 ```
-
-However, if your script runs with **logged-on user credentials**, it may not have permission to write there. A custom folder like `%ProgramData%\IntuneLogs` ensures that logs are written successfully regardless of execution context.
+It is possible to write logs there; however, if your script runs with **logged-on user credentials**, it may not have permission to write there. A custom folder like `%ProgramData%\IntuneLogs` ensures that logs are written successfully regardless of execution context.
 
 ---
 
