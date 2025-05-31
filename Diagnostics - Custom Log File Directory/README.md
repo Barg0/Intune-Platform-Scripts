@@ -35,10 +35,10 @@ Collected logs will be included in the `.cab` file under the `FoldersFiles temp_
 📦 DiagLogs-WS-612C05C43D39-20250529T111442Z.zip   
 ├─📁 (77) FoldersFiles temp_MDMDiagnostics_mdmlogs-2025-05-29-11-05-38_cab
 │  └─📦 mdmlogs-2025-05-29-11-05-38.cab
-│     ├─📜 IntuneLogs-Applications-7-Zip-detection.log
-│     ├─📜 IntuneLogs-Applications-7-Zip-install.log
-│     ├─📜 IntuneLogs-Scripts-Kerberos - Retrieval time.log
-│     └─📜 IntuneLogs-Scripts-Create - admin.laps.log
+│     ├─📄 IntuneLogs-Applications-7-Zip-detection.log
+│     ├─📄 IntuneLogs-Applications-7-Zip-install.log
+│     ├─📄 IntuneLogs-Scripts-Kerberos - Retrieval time.log
+│     └─📄 IntuneLogs-Scripts-Create - admin.laps.log
 ```
 
 ---
