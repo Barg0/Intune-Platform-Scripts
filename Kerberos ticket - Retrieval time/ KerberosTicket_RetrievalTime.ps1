@@ -9,7 +9,7 @@ $scriptStartTime = Get-Date
 # ---------------------------[ Script name ]---------------------------
 
 # Script name used for folder/log naming
-$scriptName = "Kerberos - Retrieval time"
+$scriptName = "Kerberos Ticket - Retrieval time"
 $logFileName = "$($scriptName)" + ".log"
 
 # ---------------------------[ Registry Values ]---------------------------
