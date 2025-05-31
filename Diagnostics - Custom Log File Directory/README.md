@@ -20,7 +20,8 @@ $registryKeys = @(
 )
 ```
 
-> **Note:** Always append `*.*` to the defined path so all files are included.
+> [!Note]
+> Always append `*.*` to the defined path so all files are included.
 
 ---
 
