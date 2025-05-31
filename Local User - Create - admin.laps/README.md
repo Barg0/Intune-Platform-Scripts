@@ -41,7 +41,7 @@ Navigate to:
 * **Group name**: `Administrators (built-in)`
 * **Description**: `Administrators have complete and unrestricted access to the computer/domain`
 
-> [!CRITICAL]
+> [!CAUTION]
 > My preferred approach is to check both `Delete all members` and `Delete all member groups`, then explicitly list only the intended accounts and groups. This helps ensure that any unauthorized local admin rights are automatically revoked during the next Group Policy refresh.
 
 * ✅ `Delete all members`
