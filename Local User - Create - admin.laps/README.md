@@ -130,7 +130,7 @@ Navigate to `Endpoint security` → `Account protection` → `Create Policy`
 > ├─📁 ProgramData
 > │  └─📁 IntuneLogs
 > │     └─📁 Scripts
-> │        └──📜 Create - admin.laps.log
+> │        └──📄 Create - admin.laps.log
 > ```
 >
 > To enable log collection from this custom directory using the **Collect diagnostics** feature in Intune, deploy the following platform script:
