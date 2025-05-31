@@ -42,7 +42,7 @@ Navigate to:
 * **Description**: `Administrators have complete and unrestricted access to the computer/domain`
 
 > [!CAUTION]
-> My preferred approach is to check both `Delete all members` and `Delete all member groups`, then explicitly list only the intended accounts and groups. This helps ensure that any unauthorized local admin rights are automatically revoked during the next Group Policy refresh.
+> My preferred approach is to check both `Delete all members` and `Delete all member groups`. This ensures the group is fully reset on every policy refresh and only includes the accounts and groups you explicitly define — removing any unauthorized local admin access.
 
 * ✅ `Delete all members`
 * ✅ `Delete all member groups`
