@@ -50,7 +50,7 @@ The default folder used by the  `Intune Management Extension` is:
 ```
 C:\ProgramData\Microsoft\IntuneManagementExtension\Logs
 ```
-It is possible to write logs there; however, if your script runs with **logged-on user credentials**, it may not have permission to write there. A custom folder like `%ProgramData%\IntuneLogs` ensures that logs are written successfully regardless of execution context.
+It is possible to write logs there; however, if your script runs with **logged-on user credentials**, it may not have permission to write there. A custom folder like `%ProgramData%\IntuneLogs` ensures that logs are written successfully regardless of the execution context.
 
 ---
 
