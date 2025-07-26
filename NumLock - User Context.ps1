@@ -40,7 +40,7 @@ $log = $true                     # Set to $false to disable logging in shell
 $enableLogFile = $true           # Set to $false to disable file output
 
 # Define the log output location
-$logFileDirectory = "$env:ProgramData\IntuneLogs\Scripts"
+$logFileDirectory = "$env:ProgramData\IntuneLogs\Scripts\$env:USERNAME"
 $logFile = "$logFileDirectory\$logFileName"
 
 # Ensure the log directory exists
