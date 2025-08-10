@@ -6,7 +6,7 @@ $scriptStartTime = Get-Date
 # ---------------------------[ Script name ]---------------------------
 
 # Script name used for folder/log naming
-$scriptName   = "Device Prepartion - Notebook rename"
+$scriptName   = "Device Preparation - Rename - Notebook"
 $logFileName  = "$($scriptName).log"
 
 # ---------------------------[ Parameter ]---------------------------
@@ -234,3 +234,4 @@ try {
     Write-Log "Unexpected error: $($_.Exception.Message)" -Tag "Error"
     Complete-Script -ExitCode 1
 }
+
