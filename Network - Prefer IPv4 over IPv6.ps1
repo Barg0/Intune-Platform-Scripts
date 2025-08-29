@@ -1,3 +1,5 @@
+# Script version:   2025-08-29 11:15
+
 # ---------------------------[ Script Start Timestamp ]---------------------------
 
 # Capture start time to log script duration
@@ -167,4 +169,5 @@ foreach ($key in $registryKeys) {
     }
 }
 Write-Log "All registry values were set and validated successfully." -Tag "Success"
+
 Complete-Script -ExitCode 0
