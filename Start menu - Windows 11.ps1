@@ -180,7 +180,10 @@ try {
         Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
         Start-Sleep -Seconds 2
     } else {
-        Write-Log "StartMenuExperienceHost not running for this session. It will pick up the layout on next launch/logon." -Tag "Debug"
+        Write-Log "StartMenuExperienceHost not running for this session." -Tag "Debug"
+        Write-Log "Restarting explorer..." "Info"
+        Stop-Process -Name explorer -Force
+        Start-Process -FilePath "explorer.exe"
     }
 }
 catch {
