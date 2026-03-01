@@ -90,6 +90,21 @@ C:\ProgramData\IntuneLogs\Scripts\Remove-BuiltInApps\Remove-BuiltInApps.log
 
 Set `$logDebug` to `$true` to enable verbose troubleshooting output, which includes full package names, package identifiers, and complete error details.
 
+> [!TIP]
+> The **📄 Log file** for this script is saved at:
+> `C:\ProgramData\IntuneLogs\Scripts\`
+>
+> ```
+> C:  
+> ├─📁 ProgramData
+> │  └─📁 IntuneLogs
+> │     └─📁 Scripts
+> │        └─📄 Remove-BuiltInApps.log
+> ```
+> To enable log collection from this custom directory using the **Collect diagnostics** feature in Intune, deploy the following platform script:
+>
+> [Diagnostics - Custom Log File Directory](https://github.com/Barg0/Intune-Platform-Scripts/tree/main/Diagnostics%20-%20Custom%20Log%20File%20Directory)
+
 ## 🚀 Deployment via Microsoft Intune
 
 1. In the [Microsoft Intune admin center](https://intune.microsoft.com), navigate to **Devices > Scripts and remediations > Platform scripts**
