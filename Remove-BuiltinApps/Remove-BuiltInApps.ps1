@@ -39,8 +39,7 @@ function Write-Log {
 
     if ($tagList -contains $rawTag) {
         $rawTag = $rawTag.PadRight(7)
-    }
-    else {
+    } else {
         $rawTag = "Error  "
     }
 
@@ -161,11 +160,9 @@ Write-Log "Detected OS version: $osVersion" -Tag "Get"
 
 if ($isWindows11) {
     Write-Log "Operating system identified as Windows 11" -Tag "Debug"
-}
-elseif ($isWindows10) {
+} elseif ($isWindows10) {
     Write-Log "Operating system identified as Windows 10" -Tag "Debug"
-}
-else {
+} else {
     Write-Log "Unsupported OS version: $osVersion — script requires Windows 10 or 11" -Tag "Error"
     Complete-Script -ExitCode 1
 }
@@ -201,8 +198,7 @@ function Remove-InstalledAppPackage {
                 Write-Log "Full error: $_" -Tag "Debug"
             }
         }
-    }
-    elseif ($isWindows10) {
+    } elseif ($isWindows10) {
         foreach ($package in $installedPackages) {
             foreach ($userInfo in $package.PackageUserInformation) {
                 if ($null -ne $userInfo -and $userInfo -match $sidPattern) {
