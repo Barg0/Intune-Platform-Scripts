@@ -16,7 +16,6 @@ After applying changes, the script verifies every setting and restarts Explorer 
 |---|---|
 | 🪟 Windows 11 | ✅ Supported |
 | 🪟 Windows 10 | ✅ Supported |
-| 🖥️ Windows Server 2022 | ✅ Supported (treated as Windows 10) |
 
 ## ⚙️ Configuration
 
@@ -81,10 +80,6 @@ Setting `$configWallpaper` to `"default"` uses the stock OS wallpaper (`img0.jpg
 | Enforce script signature check | ❌ No |
 
 > ⚠️ The script **must** run in user context. All registry changes target `HKEY_CURRENT_USER` and do not require elevation.
-
-### 👥 Assignment
-
-Assign the script to a user group or all users. The script is idempotent -- settings that are already configured are skipped, so repeated runs are safe.
 
 ## 📝 Logging
 
