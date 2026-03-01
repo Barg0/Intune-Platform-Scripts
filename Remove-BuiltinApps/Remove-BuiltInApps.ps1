@@ -20,6 +20,8 @@ $protectedApps = @(
     "Microsoft.Windows.Photos"
 )
 
+$removeProvisionedOnWindows11 = $false
+
 $targetApps = @(
     "Microsoft.Microsoft3DViewer",
     "Microsoft.WindowsAlarms",
@@ -261,7 +263,10 @@ foreach ($appName in $targetApps) {
     }
 
     Uninstall-InstalledApp -AppName $appName
-    Uninstall-ProvisionedApp -AppName $appName
+
+    if ($isWindows10 -or $removeProvisionedOnWindows11) {
+        Uninstall-ProvisionedApp -AppName $appName
+    }
 }
 
 # ---------------------------[ Complete ]---------------------------
