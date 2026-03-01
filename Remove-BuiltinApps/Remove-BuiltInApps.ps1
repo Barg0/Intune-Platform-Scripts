@@ -5,92 +5,6 @@ $scriptStartTime = Get-Date
 $scriptName  = "Remove-BuiltInApps"
 $logFileName = "Remove-BuiltInApps.log"
 
-# ---------------------------[ Logging Setup ]---------------------------
-$log           = $true
-$logDebug      = $false
-$logGet        = $true
-$logRun        = $true
-$enableLogFile = $true
-
-$logFileDirectory = "$env:ProgramData\IntuneLogs\Scripts"
-$logFile          = "$logFileDirectory\$logFileName"
-
-if ($enableLogFile -and -not (Test-Path -Path $logFileDirectory)) {
-    New-Item -ItemType Directory -Path $logFileDirectory -Force | Out-Null
-}
-
-# ---------------------------[ Logging Function ]---------------------------
-function Write-Log {
-    [CmdletBinding()]
-    param (
-        [string]$Message,
-        [string]$Tag = "Info"
-    )
-
-    if (-not $log) { return }
-
-    if (($Tag -eq "Debug") -and (-not $logDebug)) { return }
-    if (($Tag -eq "Get")   -and (-not $logGet))   { return }
-    if (($Tag -eq "Run")   -and (-not $logRun))   { return }
-
-    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $tagList   = @("Start","Get","Run","Info","Success","Error","Debug","End")
-    $rawTag    = $Tag.Trim()
-
-    if ($tagList -contains $rawTag) {
-        $rawTag = $rawTag.PadRight(7)
-    } else {
-        $rawTag = "Error  "
-    }
-
-    $color = switch ($rawTag.Trim()) {
-        "Start"   { "Cyan" }
-        "Get"     { "Blue" }
-        "Run"     { "Magenta" }
-        "Info"    { "Yellow" }
-        "Success" { "Green" }
-        "Error"   { "Red" }
-        "Debug"   { "DarkYellow" }
-        "End"     { "Cyan" }
-        default   { "White" }
-    }
-
-    $logMessage = "$timestamp [  $rawTag ] $Message"
-
-    if ($enableLogFile) {
-        try {
-            Add-Content -Path $logFile -Value $logMessage -Encoding UTF8
-        }
-        catch {
-            # Logging must never block script execution
-        }
-    }
-
-    Write-Host "$timestamp " -NoNewline
-    Write-Host "[  " -NoNewline -ForegroundColor White
-    Write-Host "$rawTag" -NoNewline -ForegroundColor $color
-    Write-Host " ] " -NoNewline -ForegroundColor White
-    Write-Host "$Message"
-}
-
-# ---------------------------[ Exit Function ]---------------------------
-function Complete-Script {
-    param([int]$ExitCode)
-
-    $scriptEndTime = Get-Date
-    $duration      = $scriptEndTime - $scriptStartTime
-
-    Write-Log "Script execution time: $($duration.ToString('hh\:mm\:ss\.ff'))" -Tag "Info"
-    Write-Log "Exit Code: $ExitCode" -Tag "Info"
-    Write-Log "======== Script Completed ========" -Tag "End"
-
-    exit $ExitCode
-}
-
-# ---------------------------[ Script Start ]---------------------------
-Write-Log "======== Script Started ========" -Tag "Start"
-Write-Log "ComputerName: $env:COMPUTERNAME | User: $env:USERNAME | Script: $scriptName" -Tag "Info"
-
 # ---------------------------[ Configuration ]---------------------------
 $protectedApps = @(
     "Microsoft.NET.Native.Framework.2.2",
@@ -151,6 +65,91 @@ $targetApps = @(
     "Microsoft.Xbox.TCUI"
 )
 
+# ---------------------------[ Logging Setup ]---------------------------
+$log           = $true
+$logDebug      = $false
+$logGet        = $true
+$logRun        = $true
+$enableLogFile = $true
+
+$logFileDirectory = "$env:ProgramData\IntuneLogs\Scripts"
+$logFile          = "$logFileDirectory\$logFileName"
+
+if ($enableLogFile -and -not (Test-Path -Path $logFileDirectory)) {
+    New-Item -ItemType Directory -Path $logFileDirectory -Force | Out-Null
+}
+
+# ---------------------------[ Logging Function ]---------------------------
+function Write-Log {
+    [CmdletBinding()]
+    param (
+        [string]$Message,
+        [string]$Tag = "Info"
+    )
+
+    if (-not $log) { return }
+
+    if (($Tag -eq "Debug") -and (-not $logDebug)) { return }
+    if (($Tag -eq "Get")   -and (-not $logGet))   { return }
+    if (($Tag -eq "Run")   -and (-not $logRun))   { return }
+
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $tagList   = @("Start","Get","Run","Info","Success","Error","Debug","End")
+    $rawTag    = $Tag.Trim()
+
+    if ($tagList -contains $rawTag) {
+        $rawTag = $rawTag.PadRight(7)
+    } else {
+        $rawTag = "Error  "
+    }
+
+    $color = switch ($rawTag.Trim()) {
+        "Start"   { "Cyan" }
+        "Get"     { "Blue" }
+        "Run"     { "Magenta" }
+        "Info"    { "Yellow" }
+        "Success" { "Green" }
+        "Error"   { "Red" }
+        "Debug"   { "DarkYellow" }
+        "End"     { "Cyan" }
+        default   { "White" }
+    }
+
+    $logMessage = "$timestamp [  $rawTag ] $Message"
+
+    if ($enableLogFile) {
+        try {
+            Add-Content -Path $logFile -Value $logMessage -Encoding UTF8
+        } catch {
+            # Logging must never block script execution
+        }
+    }
+
+    Write-Host "$timestamp " -NoNewline
+    Write-Host "[  " -NoNewline -ForegroundColor White
+    Write-Host "$rawTag" -NoNewline -ForegroundColor $color
+    Write-Host " ] " -NoNewline -ForegroundColor White
+    Write-Host "$Message"
+}
+
+# ---------------------------[ Exit Function ]---------------------------
+function Complete-Script {
+    param([int]$ExitCode)
+
+    $scriptEndTime = Get-Date
+    $duration      = $scriptEndTime - $scriptStartTime
+
+    Write-Log "Script execution time: $($duration.ToString('hh\:mm\:ss\.ff'))" -Tag "Info"
+    Write-Log "Exit Code: $ExitCode" -Tag "Info"
+    Write-Log "======== Script Completed ========" -Tag "End"
+
+    exit $ExitCode
+}
+
+# ---------------------------[ Script Start ]---------------------------
+Write-Log "======== Script Started ========" -Tag "Start"
+Write-Log "ComputerName: $env:COMPUTERNAME | User: $env:USERNAME | Script: $scriptName" -Tag "Info"
+
 # ---------------------------[ OS Detection ]---------------------------
 $osVersion   = (Get-CimInstance Win32_OperatingSystem).Version
 $isWindows11 = $osVersion -like "10.0.2*"
@@ -159,18 +158,18 @@ $isWindows10 = $osVersion -like "10.0.1*"
 Write-Log "Detected OS version: $osVersion" -Tag "Get"
 
 if ($isWindows11) {
-    Write-Log "Operating system identified as Windows 11" -Tag "Debug"
+    Write-Log "Operating system identified as Windows 11" -Tag "Info"
 } elseif ($isWindows10) {
-    Write-Log "Operating system identified as Windows 10" -Tag "Debug"
+    Write-Log "Operating system identified as Windows 10" -Tag "Info"
 } else {
-    Write-Log "Unsupported OS version: $osVersion — script requires Windows 10 or 11" -Tag "Error"
+    Write-Log "Unsupported OS version: $osVersion - script requires Windows 10 or 11" -Tag "Error"
     Complete-Script -ExitCode 1
 }
 
 # ---------------------------[ Functions ]---------------------------
 $sidPattern = "^(S-1-5-\d+-\d+-\d+-\d+-\d+)"
 
-function Remove-InstalledAppPackage {
+function Uninstall-InstalledApp {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -192,9 +191,8 @@ function Remove-InstalledAppPackage {
                 Write-Log "PackageFullName: $($package.PackageFullName)" -Tag "Debug"
                 Remove-AppxPackage -Package $package.PackageFullName -AllUsers -ErrorAction Stop
                 Write-Log "$AppName removed successfully for all users" -Tag "Success"
-            }
-            catch {
-                Write-Log "Failed to remove $AppName — $($_.Exception.Message)" -Tag "Error"
+            } catch {
+                Write-Log "Failed to remove $AppName - $($_.Exception.Message)" -Tag "Error"
                 Write-Log "Full error: $_" -Tag "Debug"
             }
         }
@@ -208,9 +206,8 @@ function Remove-InstalledAppPackage {
                         Get-AppxPackage -User $userSid -Name $AppName |
                             Remove-AppxPackage -User $userSid -ErrorAction Stop
                         Write-Log "$AppName removed successfully for user SID $userSid" -Tag "Success"
-                    }
-                    catch {
-                        Write-Log "Failed to remove $AppName for user SID $userSid — $($_.Exception.Message)" -Tag "Error"
+                    } catch {
+                        Write-Log "Failed to remove $AppName for user SID $userSid - $($_.Exception.Message)" -Tag "Error"
                         Write-Log "Full error: $_" -Tag "Debug"
                     }
                 }
@@ -219,7 +216,7 @@ function Remove-InstalledAppPackage {
     }
 }
 
-function Remove-ProvisionedAppPackage {
+function Uninstall-ProvisionedApp {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -240,17 +237,15 @@ function Remove-ProvisionedAppPackage {
             try {
                 Write-Log "Removing provisioned package $($package.DisplayName)" -Tag "Run"
                 Write-Log "PackageName: $($package.PackageName)" -Tag "Debug"
-                Remove-AppxProvisionedPackage -Online -PackageName $package.PackageName -ErrorAction Stop
+                Remove-AppxProvisionedPackage -Online -PackageName $package.PackageName -ErrorAction Stop | Out-Null
                 Write-Log "Provisioned package $($package.DisplayName) removed successfully" -Tag "Success"
-            }
-            catch {
-                Write-Log "Failed to remove provisioned package $($package.DisplayName) — $($_.Exception.Message)" -Tag "Error"
+            } catch {
+                Write-Log "Failed to remove provisioned package $($package.DisplayName) - $($_.Exception.Message)" -Tag "Error"
                 Write-Log "Full error: $_" -Tag "Debug"
             }
         }
-    }
-    catch {
-        Write-Log "Failed to query provisioned packages for $AppName — $($_.Exception.Message)" -Tag "Error"
+    } catch {
+        Write-Log "Failed to query provisioned packages for $AppName - $($_.Exception.Message)" -Tag "Error"
         Write-Log "Full error: $_" -Tag "Debug"
     }
 }
@@ -261,12 +256,12 @@ Write-Log "Protected apps count: $($protectedApps.Count)" -Tag "Debug"
 
 foreach ($appName in $targetApps) {
     if ($appName -in $protectedApps) {
-        Write-Log "$appName is protected — skipping removal" -Tag "Info"
+        Write-Log "$appName is protected - skipping removal" -Tag "Info"
         continue
     }
 
-    Remove-InstalledAppPackage -AppName $appName
-    Remove-ProvisionedAppPackage -AppName $appName
+    Uninstall-InstalledApp -AppName $appName
+    Uninstall-ProvisionedApp -AppName $appName
 }
 
 # ---------------------------[ Complete ]---------------------------
