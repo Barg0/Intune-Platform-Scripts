@@ -85,7 +85,7 @@ Get-AppxPackage | Select-Object Name | Sort-Object Name
 📂 Log files are written to:
 
 ```
-C:\ProgramData\IntuneLogs\Scripts\Remove-BuiltInApps\Remove-BuiltInApps.log
+C:\ProgramData\IntuneLogs\Scripts\Remove-BuiltInApps.log
 ```
 
 Set `$logDebug` to `$true` to enable verbose troubleshooting output, which includes full package names, package identifiers, and complete error details.
@@ -135,3 +135,4 @@ The script runs under the **SYSTEM** context, which is required for `Remove-Appx
 - 🔒 **Run as SYSTEM**: The script must run in the system context (not as the logged-on user) to remove packages for all users and deprovision apps.
 - 🧩 **PowerShell 5.1 compatibility**: The script is compatible with Windows PowerShell 5.1, which is the runtime used by Intune Platform Scripts. It uses only ASCII characters and K&R brace style to avoid encoding and parsing issues.
 - ♻️ **Idempotent**: The script can run multiple times safely. Already-removed apps are skipped silently (logged at Debug level).
+
