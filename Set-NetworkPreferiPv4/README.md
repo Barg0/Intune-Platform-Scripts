@@ -44,8 +44,6 @@ This script sets the following registry value:
 3. Assign the script to the desired device group (User or Device context).
 4. The script runs in **system context** and will configure the device after deployment.
 
-> ✅ **Tip:** You can use this as a **remediation script** in Proactive Remediations to ensure devices stay compliant.
-
 ---
 
 ## 📂 Requirements
@@ -63,7 +61,7 @@ This script sets the following registry value:
 The script writes structured logs to:
 
 ```
-%ProgramData%\IntuneLogs\Scripts\Set-NetworkPreferIpv4\Set-NetworkPreferIpv4.log
+%ProgramData%\IntuneLogs\Scripts\Set-NetworkPreferIpv4.log
 ```
 
 You can adjust logging in the script:
@@ -80,7 +78,7 @@ You can adjust logging in the script:
 
 ## 🔄 Applying Changes
 
-Registry changes take effect immediately. A **reboot is not required** in most cases, but for the change to fully apply in all network stack components, a reboot may be recommended in some environments.
+Registry changes take effect immediately. A **reboot is required**.
 
 ---
 
@@ -96,3 +94,4 @@ Registry changes take effect immediately. A **reboot is not required** in most c
 ## 📜 License
 
 Use and modify as needed for your environment.
+
