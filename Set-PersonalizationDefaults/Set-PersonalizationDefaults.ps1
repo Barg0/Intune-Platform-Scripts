@@ -13,44 +13,49 @@ $logFileName = "$scriptName.log"
 # ---------------------------------------------------------------------------
 
 # --- Theme ---
-$configTaskbarTheme         = "dark"            # "dark" | "light" | $null
-$configExplorerTheme        = "light"           # "dark" | "light" | $null
-$configAutoColorization     = $true             # $true | $false  | $null
-$configTransparency         = $true             # $true | $false  | $null
+$configTaskbarTheme                 = "dark"      # "dark" | "light" | $null
+$configExplorerTheme                = "light"     # "dark" | "light" | $null
+
+# --- Color ---
+$configAutoColorization             = $true       # $true | $false  | $null
+$configAccentColorHex               = $null       # "#RRGGBB" or "RRGGBB" | $null (set $configAutoColorization = $false for a fixed accent)
+$configColorPrevalenceStartTaskbar  = $null       # Themes\Personalize — accent on Start & taskbar | $false | $null
+$configColorPrevalenceTitleBars     = $null       # DWM — accent on title bars & window borders | $false | $null
+$configTransparency                 = $null       # $true | $false  | $null
 
 # --- Explorer ---
-$configLaunchTo             = "computer"        # "computer" | "quick-access" | $null
-$configShowFileExtensions   = $true             # $true | $false  | $null
-$configShowCheckboxes       = $false            # $true | $false  | $null
+$configLaunchTo                     = "computer"  # "computer" | "quick-access" | $null
+$configShowFileExtensions           = $true       # $true | $false  | $null
+$configShowCheckboxes               = $false      # $true | $false  | $null
 
 # --- Taskbar ---
-$configShowTaskView         = $false            # $true | $false  | $null
+$configShowTaskView                 = $false      # $true | $false  | $null
 
 # --- Wallpaper ---
-$configWallpaper            = "default"         # "default" | "C:\path\to\image.jpg" | $null
+$configWallpaper                    = "default"   # "default" | "C:\path\to\image.jpg" | $null
 
 # ---------------------------------------------------------------------------
 #                         WINDOWS 10 ONLY
 # ---------------------------------------------------------------------------
 
 # --- Taskbar ---
-$configSearchbarModeWin10   = "icon"            # "hidden" | "icon" | "box" | $null
-$configShowCortana          = $false            # $true | $false  | $null
-$configShowNewsAndInterests = $false            # $true | $false  | $null
+$configSearchbarModeWin10           = "icon"      # "hidden" | "icon" | "box" | $null
+$configShowCortana                  = $false      # $true | $false  | $null
+$configShowNewsAndInterests         = $false      # $true | $false  | $null
 
 # --- System Tray ---
-$configShowAllTrayIcons     = $true             # $true | $false  | $null
+$configShowAllTrayIcons             = $true       # $true | $false  | $null
 
 # ---------------------------------------------------------------------------
 #                         WINDOWS 11 ONLY
 # ---------------------------------------------------------------------------
 
 # --- Taskbar ---
-$configSearchbarModeWin11   = "icon"            # "hidden" | "icon" | "box" | "icon-label" | $null
-$configStartAlignment       = "left"            # "left" | "center" | $null
+$configSearchbarModeWin11           = "icon"      # "hidden" | "icon" | "box" | "icon-label" | $null
+$configStartAlignment               = "left"      # "left" | "center" | $null
 
 # --- Explorer ---
-$configClassicContextMenu   = $true             # $true | $false  | $null
+$configClassicContextMenu           = $true       # $true | $false  | $null
 
 # ===========================================================================
 #                          END OF CONFIGURATION
@@ -140,6 +145,279 @@ function Complete-Script {
 }
 
 # ---------------------------[ Registry Helpers ]---------------------------
+function ConvertTo-UnsignedDword {
+    param ([long]$Value)
+    while ($Value -lt 0) { $Value += 4294967296 }
+    while ($Value -gt 4294967295) { $Value -= 4294967296 }
+    return [uint32]$Value
+}
+
+function Test-EquivalentRegDword {
+    param (
+        [object]$Current,
+        [object]$Expected
+    )
+    try {
+        $uCur = ConvertTo-UnsignedDword -Value ([int64]$Current)
+        $uExp = ConvertTo-UnsignedDword -Value ([int64]$Expected)
+        return ($uCur -eq $uExp)
+    }
+    catch {
+        return $false
+    }
+}
+
+function ConvertTo-RegistryBinaryHex {
+    <#
+        Normalizes a REG_BINARY value read from the registry (or a hex string) to a
+        continuous lowercase hex string for comparison with reg.exe /d output.
+    #>
+    [CmdletBinding()]
+    param ([object]$Value)
+
+    if ($null -eq $Value) {
+        return ''
+    }
+    if ($Value -is [string]) {
+        return ($Value -replace '\s', '').ToLowerInvariant()
+    }
+
+    $bytes = @($Value)
+    if ($bytes.Count -eq 0) {
+        return ''
+    }
+
+    $sb = [System.Text.StringBuilder]::new($bytes.Count * 2)
+    foreach ($byte in $bytes) {
+        [void]$sb.Append(('{0:x2}' -f ([int]$byte -band 0xFF)))
+    }
+    return $sb.ToString()
+}
+
+function ConvertTo-ClampedHslRgb {
+    <#
+        Converts R,G,B (0–255) to HSL, clamps luminance L to [0.25, 0.75], returns clamped @{R;G;B} (0–255).
+        Matches Windows accent luminosity enforcement.
+    #>
+    [CmdletBinding()]
+    param (
+        [int]$R,
+        [int]$G,
+        [int]$B
+    )
+
+    $rN = ([math]::Max(0, [math]::Min(255, $R))) / 255.0
+    $gN = ([math]::Max(0, [math]::Min(255, $G))) / 255.0
+    $bN = ([math]::Max(0, [math]::Min(255, $B))) / 255.0
+
+    $max = [math]::Max($rN, [math]::Max($gN, $bN))
+    $min = [math]::Min($rN, [math]::Min($gN, $bN))
+    $delta = $max - $min
+
+    $L = ($max + $min) / 2.0
+
+    if ($delta -lt 1e-9) {
+        $Lclamped = [math]::Max(0.25, [math]::Min(0.75, $L))
+        $v        = [int][math]::Round($Lclamped * 255.0)
+        $v        = [math]::Max(0, [math]::Min(255, $v))
+        return @{ R = $v; G = $v; B = $v }
+    }
+
+    $S = if ($L -lt 0.5) {
+        $delta / ($max + $min)
+    }
+    else {
+        $delta / (2.0 - $max - $min)
+    }
+
+    $h = if ($max -eq $rN) {
+        (($gN - $bN) / $delta)
+    }
+    elseif ($max -eq $gN) {
+        (($bN - $rN) / $delta) + 2.0
+    }
+    else {
+        (($rN - $gN) / $delta) + 4.0
+    }
+
+    $H = 60.0 * $h
+    while ($H -ge 360.0) { $H -= 360.0 }
+    while ($H -lt 0) { $H += 360.0 }
+
+    $Lclamped = [math]::Max(0.25, [math]::Min(0.75, $L))
+
+    $c = (1.0 - [math]::Abs(2.0 * $Lclamped - 1.0)) * $S
+    $hPrime = $H / 60.0
+    $x = $c * (1.0 - [math]::Abs(($hPrime % 2.0) - 1.0))
+    $m = $Lclamped - ($c / 2.0)
+
+    $hi = [int][math]::Floor($hPrime + 1e-9) % 6
+
+    $r1, $g1, $b1 = switch ($hi) {
+        0 { @( $c, $x, 0.0 ) }
+        1 { @( $x, $c, 0.0 ) }
+        2 { @( 0.0, $c, $x ) }
+        3 { @( 0.0, $x, $c ) }
+        4 { @( $x, 0.0, $c ) }
+        5 { @( $c, 0.0, $x ) }
+        default { @( 0.0, 0.0, 0.0 ) }
+    }
+
+    $outR = [int][math]::Round(($r1 + $m) * 255.0)
+    $outG = [int][math]::Round(($g1 + $m) * 255.0)
+    $outB = [int][math]::Round(($b1 + $m) * 255.0)
+
+    return @{
+        R = [math]::Max(0, [math]::Min(255, $outR))
+        G = [math]::Max(0, [math]::Min(255, $outG))
+        B = [math]::Max(0, [math]::Min(255, $outB))
+    }
+}
+
+function ConvertFrom-HexColorToAccentDword {
+    <#
+        Converts #RRGGBB to the REG_DWORD Windows uses for accent colors (little-endian ABGR):
+        alpha 0xFF + blue + green + red. Input RGB is clamped to Windows HSL luminance 25–75%
+        before encoding. Used for Explorer\Accent (AccentColor, AccentColorMenu) and DWM\AccentColor.
+    #>
+    [CmdletBinding()]
+    param ([string]$HexColor)
+
+    $hex = ($HexColor -replace '^\s+|\s+$', '')
+    if ($hex.StartsWith('#')) {
+        $hex = $hex.Substring(1)
+    }
+    if ($hex.Length -ne 6 -or $hex -notmatch '^[0-9A-Fa-f]{6}$') {
+        return $null
+    }
+
+    try {
+        $r = [Convert]::ToByte($hex.Substring(0, 2), 16)
+        $g = [Convert]::ToByte($hex.Substring(2, 2), 16)
+        $b = [Convert]::ToByte($hex.Substring(4, 2), 16)
+
+        $clamped = ConvertTo-ClampedHslRgb -R $r -G $g -B $b
+        if ($r -ne $clamped.R -or $g -ne $clamped.G -or $b -ne $clamped.B) {
+            $outHex = '#{0:x2}{1:x2}{2:x2}' -f $clamped.R, $clamped.G, $clamped.B
+            Write-Log "Accent color clamped for Windows luminosity range (25-75% HSL): input $HexColor → output $outHex" -Tag "Info"
+        }
+
+        $sum = [uint64]4278190080 + ($clamped.B -shl 16) + ($clamped.G -shl 8) + $clamped.R
+        return [uint32]$sum
+    }
+    catch {
+        return $null
+    }
+}
+
+function ConvertFrom-HslToRgb {
+    param (
+        [double]$H,   # 0-360
+        [double]$S,   # 0-1
+        [double]$L    # 0-1
+    )
+
+    if ($S -eq 0) {
+        $val = [byte]([Math]::Round($L * 255))
+        return @{ R = $val; G = $val; B = $val }
+    }
+
+    $C = (1 - [Math]::Abs(2 * $L - 1)) * $S
+    $X = $C * (1 - [Math]::Abs(($H / 60) % 2 - 1))
+    $m = $L - $C / 2
+
+    $r1, $g1, $b1 = switch ([Math]::Floor($H / 60)) {
+        0 { $C; $X; 0 }
+        1 { $X; $C; 0 }
+        2 { 0; $C; $X }
+        3 { 0; $X; $C }
+        4 { $X; 0; $C }
+        5 { $C; 0; $X }
+        default { 0; 0; 0 }
+    }
+
+    return @{
+        R = [byte]([Math]::Round(($r1 + $m) * 255))
+        G = [byte]([Math]::Round(($g1 + $m) * 255))
+        B = [byte]([Math]::Round(($b1 + $m) * 255))
+    }
+}
+
+function ConvertFrom-HexColorToAccentPaletteBinary {
+    <#
+        Same hex parsing and luminance clamp as ConvertFrom-HexColorToAccentDword.
+        Builds Explorer AccentPalette: 32 bytes, 8 slots (R,G,B,00 per slot) lightest to darkest.
+        Windows reads each slot as R,G,B then padding; varying L while holding H and S from the
+        clamped base color. Slot 4 uses the clamped RGB bytes exactly (matches AccentColor DWORD).
+    #>
+    [CmdletBinding()]
+    param ([string]$HexColor)
+
+    $hex = ($HexColor -replace '^\s+|\s+$', '')
+    if ($hex.StartsWith('#')) {
+        $hex = $hex.Substring(1)
+    }
+    if ($hex.Length -ne 6 -or $hex -notmatch '^[0-9A-Fa-f]{6}$') {
+        return $null
+    }
+
+    try {
+        $r = [Convert]::ToByte($hex.Substring(0, 2), 16)
+        $g = [Convert]::ToByte($hex.Substring(2, 2), 16)
+        $b = [Convert]::ToByte($hex.Substring(4, 2), 16)
+        $clamped = ConvertTo-ClampedHslRgb -R $r -G $g -B $b
+
+        $rN = $clamped.R / 255.0
+        $gN = $clamped.G / 255.0
+        $bN = $clamped.B / 255.0
+        $max = [math]::Max($rN, [math]::Max($gN, $bN))
+        $min = [math]::Min($rN, [math]::Min($gN, $bN))
+        $delta = $max - $min
+        $baseL = ($max + $min) / 2.0
+
+        if ($delta -lt 1e-9) {
+            $H = 0.0
+            $S = 0.0
+        }
+        else {
+            $S = if ($baseL -lt 0.5) {
+                $delta / ($max + $min)
+            }
+            else {
+                $delta / (2.0 - $max - $min)
+            }
+            $h = if ($max -eq $rN) {
+                (($gN - $bN) / $delta)
+            }
+            elseif ($max -eq $gN) {
+                (($bN - $rN) / $delta) + 2.0
+            }
+            else {
+                (($rN - $gN) / $delta) + 4.0
+            }
+            $H = 60.0 * $h
+            while ($H -ge 360.0) { $H -= 360.0 }
+            while ($H -lt 0) { $H += 360.0 }
+        }
+
+        $lSlots = @(0.90, 0.75, 0.60, 0.50, $baseL, 0.35, 0.25, 0.15)
+        $parts  = [System.Collections.Generic.List[string]]::new()
+        for ($si = 0; $si -lt $lSlots.Count; $si++) {
+            if ($si -eq 4) {
+                $pix = @{ R = $clamped.R; G = $clamped.G; B = $clamped.B }
+            }
+            else {
+                $pix = ConvertFrom-HslToRgb -H $H -S $S -L $lSlots[$si]
+            }
+            [void]$parts.Add(('{0:x2}{1:x2}{2:x2}00' -f $pix.R, $pix.G, $pix.B))
+        }
+        return -join $parts
+    }
+    catch {
+        return $null
+    }
+}
+
 function Set-RegistryValue {
     [CmdletBinding()]
     param (
@@ -169,7 +447,20 @@ function Set-RegistryValue {
         $currentValue = $null
     }
 
-    $valueAlreadySet = ($null -ne $currentValue) -and ("$currentValue" -eq "$ValueData")
+    $valueAlreadySet = $false
+    if ($null -ne $currentValue) {
+        if ($ValueType -eq "REG_DWORD") {
+            $valueAlreadySet = Test-EquivalentRegDword -Current $currentValue -Expected $ValueData
+        }
+        elseif ($ValueType -eq "REG_BINARY") {
+            $curHex = ConvertTo-RegistryBinaryHex -Value $currentValue
+            $expHex = ($ValueData -replace '\s', '').ToLowerInvariant()
+            $valueAlreadySet = ($curHex -eq $expHex)
+        }
+        else {
+            $valueAlreadySet = ("$currentValue" -eq "$ValueData")
+        }
+    }
 
     if ($valueAlreadySet) {
         Write-Log "$Description - already configured" -Tag "Success"
@@ -234,7 +525,8 @@ function Test-RegistryValue {
         [string]$KeyPath,
         [string]$ValueName,
         [string]$ExpectedValue,
-        [string]$Description
+        [string]$Description,
+        [string]$ValueType = ""
     )
 
     $fullPath       = "HKCU:\$KeyPath"
@@ -248,7 +540,18 @@ function Test-RegistryValue {
             $actualValue = (Get-ItemProperty -Path $fullPath -Name $ValueName -ErrorAction Stop).$ValueName
         }
 
-        if ("$actualValue" -eq "$ExpectedValue") {
+        $match = if ($ValueType -eq "REG_DWORD") {
+            Test-EquivalentRegDword -Current $actualValue -Expected $ExpectedValue
+        }
+        elseif ($ValueType -eq "REG_BINARY") {
+            $hexActual = ($actualValue | ForEach-Object { $_.ToString("x2") }) -join ""
+            $hexActual -eq $ExpectedValue.ToLower()
+        }
+        else {
+            "$actualValue" -eq "$ExpectedValue"
+        }
+
+        if ($match) {
             Write-Log "$Description - verified" -Tag "Success"
             return $true
         }
@@ -384,6 +687,8 @@ function Get-PersonalizationSettings {
         }
     }
 
+    # ---- Color ----
+
     if ($null -ne $configAutoColorization) {
         $value = if ($configAutoColorization) { 1 } else { 0 }
         [void]$settings.Add(@{
@@ -391,6 +696,82 @@ function Get-PersonalizationSettings {
             Description = "Automatic accent color"
             KeyPath     = "Control Panel\Desktop"
             ValueName   = "AutoColorization"
+            ValueType   = "REG_DWORD"
+            ValueData   = $value
+            SupportedOS = @("Windows10", "Windows11")
+        })
+    }
+
+    if ($null -ne $configAccentColorHex) {
+        $accentDword = ConvertFrom-HexColorToAccentDword -HexColor "$configAccentColorHex"
+        if ($null -ne $accentDword) {
+            $accentKey = "Software\Microsoft\Windows\CurrentVersion\Explorer\Accent"
+            $dwordStr   = "$accentDword"
+            [void]$settings.Add(@{
+                Action      = "Set"
+                Description = "Accent color — Explorer ($configAccentColorHex)"
+                KeyPath     = $accentKey
+                ValueName   = "AccentColor"
+                ValueType   = "REG_DWORD"
+                ValueData   = $dwordStr
+                SupportedOS = @("Windows10", "Windows11")
+            })
+            [void]$settings.Add(@{
+                Action      = "Set"
+                Description = "Accent color — Start & taskbar ($configAccentColorHex)"
+                KeyPath     = $accentKey
+                ValueName   = "AccentColorMenu"
+                ValueType   = "REG_DWORD"
+                ValueData   = $dwordStr
+                SupportedOS = @("Windows10", "Windows11")
+            })
+            $paletteHex = ConvertFrom-HexColorToAccentPaletteBinary -HexColor "$configAccentColorHex"
+            if ($null -ne $paletteHex) {
+                [void]$settings.Add(@{
+                    Action      = "Set"
+                    Description = "Accent palette ($configAccentColorHex)"
+                    KeyPath     = $accentKey
+                    ValueName   = "AccentPalette"
+                    ValueType   = "REG_BINARY"
+                    ValueData   = $paletteHex
+                    SupportedOS = @("Windows10", "Windows11")
+                })
+            }
+            [void]$settings.Add(@{
+                Action      = "Set"
+                Description = "Accent color — DWM / title bars ($configAccentColorHex)"
+                KeyPath     = "Software\Microsoft\Windows\DWM"
+                ValueName   = "AccentColor"
+                ValueType   = "REG_DWORD"
+                ValueData   = $dwordStr
+                SupportedOS = @("Windows10", "Windows11")
+            })
+        }
+        else {
+            Write-Log "Invalid configAccentColorHex: '$configAccentColorHex' (expected #RRGGBB or RRGGBB)" -Tag "Error"
+        }
+    }
+
+    if ($null -ne $configColorPrevalenceStartTaskbar) {
+        $value = if ($configColorPrevalenceStartTaskbar) { 1 } else { 0 }
+        [void]$settings.Add(@{
+            Action      = "Set"
+            Description = "Show accent on Start and taskbar"
+            KeyPath     = "Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
+            ValueName   = "ColorPrevalence"
+            ValueType   = "REG_DWORD"
+            ValueData   = $value
+            SupportedOS = @("Windows10", "Windows11")
+        })
+    }
+
+    if ($null -ne $configColorPrevalenceTitleBars) {
+        $value = if ($configColorPrevalenceTitleBars) { 1 } else { 0 }
+        [void]$settings.Add(@{
+            Action      = "Set"
+            Description = "Show accent on title bars and window borders"
+            KeyPath     = "Software\Microsoft\Windows\DWM"
+            ValueName   = "ColorPrevalence"
             ValueType   = "REG_DWORD"
             ValueData   = $value
             SupportedOS = @("Windows10", "Windows11")
@@ -686,7 +1067,8 @@ foreach ($setting in $personalizationSettings) {
             -KeyPath       $setting.KeyPath `
             -ValueName     $setting.ValueName `
             -ExpectedValue $setting.ValueData `
-            -Description   $setting.Description
+            -Description   $setting.Description `
+            -ValueType     $setting.ValueType
 
         if (-not $verified) {
             $allChecksPassed = $false
