@@ -19,8 +19,8 @@ $configExplorerTheme                = "light"     # "dark" | "light" | $null
 # --- Color ---
 $configAutoColorization             = $true       # $true | $false  | $null
 $configAccentColorHex               = $null       # "#RRGGBB" or "RRGGBB" | $null (set $configAutoColorization = $false for a fixed accent)
-$configColorPrevalenceStartTaskbar  = $null       # Themes\Personalize — accent on Start & taskbar | $false | $null
-$configColorPrevalenceTitleBars     = $null       # DWM — accent on title bars & window borders | $false | $null
+$configColorPrevalenceStartTaskbar  = $null       # Themes\Personalize - accent on Start & taskbar | $false | $null
+$configColorPrevalenceTitleBars     = $null       # DWM - accent on title bars & window borders | $false | $null
 $configTransparency                 = $null       # $true | $false  | $null
 
 # --- Explorer ---
@@ -196,7 +196,7 @@ function ConvertTo-RegistryBinaryHex {
 
 function ConvertTo-ClampedHslRgb {
     <#
-        Converts R,G,B (0–255) to HSL, clamps luminance L to [0.25, 0.75], returns clamped @{R;G;B} (0–255).
+        Converts R,G,B (0-255) to HSL, clamps luminance L to [0.25, 0.75], returns clamped @{R;G;B} (0-255).
         Matches Windows accent luminosity enforcement.
     #>
     [CmdletBinding()]
@@ -277,7 +277,7 @@ function ConvertTo-ClampedHslRgb {
 function ConvertFrom-HexColorToAccentDword {
     <#
         Converts #RRGGBB to the REG_DWORD Windows uses for accent colors (little-endian ABGR):
-        alpha 0xFF + blue + green + red. Input RGB is clamped to Windows HSL luminance 25–75%
+        alpha 0xFF + blue + green + red. Input RGB is clamped to Windows HSL luminance 25-75%
         before encoding. Used for Explorer\Accent (AccentColor, AccentColorMenu) and DWM\AccentColor.
     #>
     [CmdletBinding()]
@@ -299,7 +299,7 @@ function ConvertFrom-HexColorToAccentDword {
         $clamped = ConvertTo-ClampedHslRgb -R $r -G $g -B $b
         if ($r -ne $clamped.R -or $g -ne $clamped.G -or $b -ne $clamped.B) {
             $outHex = '#{0:x2}{1:x2}{2:x2}' -f $clamped.R, $clamped.G, $clamped.B
-            Write-Log "Accent color clamped for Windows luminosity range (25-75% HSL): input $HexColor → output $outHex" -Tag "Info"
+            Write-Log "Accent color clamped for Windows luminosity range (25-75% HSL): input $HexColor -> output $outHex" -Tag "Info"
         }
 
         $sum = [uint64]4278190080 + ($clamped.B -shl 16) + ($clamped.G -shl 8) + $clamped.R
@@ -709,7 +709,7 @@ function Get-PersonalizationSettings {
             $dwordStr   = "$accentDword"
             [void]$settings.Add(@{
                 Action      = "Set"
-                Description = "Accent color — Explorer ($configAccentColorHex)"
+                Description = "Accent color - Explorer ($configAccentColorHex)"
                 KeyPath     = $accentKey
                 ValueName   = "AccentColor"
                 ValueType   = "REG_DWORD"
@@ -718,7 +718,7 @@ function Get-PersonalizationSettings {
             })
             [void]$settings.Add(@{
                 Action      = "Set"
-                Description = "Accent color — Start & taskbar ($configAccentColorHex)"
+                Description = "Accent color - Start & taskbar ($configAccentColorHex)"
                 KeyPath     = $accentKey
                 ValueName   = "AccentColorMenu"
                 ValueType   = "REG_DWORD"
@@ -739,7 +739,7 @@ function Get-PersonalizationSettings {
             }
             [void]$settings.Add(@{
                 Action      = "Set"
-                Description = "Accent color — DWM / title bars ($configAccentColorHex)"
+                Description = "Accent color - DWM / title bars ($configAccentColorHex)"
                 KeyPath     = "Software\Microsoft\Windows\DWM"
                 ValueName   = "AccentColor"
                 ValueType   = "REG_DWORD"
